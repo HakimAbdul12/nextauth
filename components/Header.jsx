@@ -16,6 +16,9 @@ export default async function Header() {
               <Link href={"/"}>Home</Link>
             </li>
             <li>
+              <Link href={"/client"}>Client</Link>
+            </li>
+            <li>
               <Link href={"/aboutus"}>About</Link>
             </li>
             {session && (
@@ -23,8 +26,8 @@ export default async function Header() {
                 <Link href={"/dashboard"}>Dashboard</Link>
               </li>
             )}
-            <li>
-              <Link href={"/api/auth/signout"}>Out</Link>
+            <li className="text-[#ff55008f]">
+              <Link href={"/api/auth/signout"}>Logout</Link>
             </li>
           </ul>
         </div>

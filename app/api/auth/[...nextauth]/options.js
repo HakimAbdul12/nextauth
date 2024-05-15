@@ -20,7 +20,7 @@ export const options = {
       async authorize(credentials) {
         //hard code a user but this is where we will connect out database
         const user = { id: "1", name: "hakim", email: "jsmith@example.com", password:"Hakim,12" };
-        if(credentials?.username === user && credentials?.password === user.password ){
+        if(credentials?.username === user.name && credentials?.password === user.password ){
             return user;
         }
         else{
