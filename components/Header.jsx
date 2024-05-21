@@ -39,14 +39,6 @@ export default async function Header() {
               alt="Profile"
             />
           ) : (
-            //     <Image
-            //     className="border-4 border-black dark:border-slate-500 drop-shadow-xl shadow-black rounded-full mx-auto mt-8"
-            //     src={session.user?.image}
-            //     width={200}
-            //     height={200}
-            //     alt={session.user?.name ?? "Profile Pic"}
-            //     priority={true}
-            // />
             <button><Link href={'/api/auth/signin'}>Login</Link></button>
           )}
         </div>
