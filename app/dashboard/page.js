@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { options } from "../api/auth/[...nextauth]/options";
 export default async function Dashbord() {
   const session = await getServerSession(options);
+  const seesionDataInStringFormat = JSON.stringify(session);
   if (!session) {
     redirect("/api/auth/signin?callbackUrl=/server");
   }
@@ -19,7 +20,7 @@ export default async function Dashbord() {
           <h2 className="text-2xl font-semibold mb-4 shadow-lg p-5 rounded-full dark:bg-gray-900">
             Welcome <span className="clip">
                 {
-                    session ? (<>{session.user.name}</>):null
+                  session ? (<>{session.user.name}</>):null
                 }
             </span>
           </h2>
@@ -50,6 +51,12 @@ export default async function Dashbord() {
               <p className="text-lg">Added new project</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 by Alice Johnson
+              </p>
+            </li>
+            <li className="py-4">
+              <p className="text-lg">This is your session data</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {seesionDataInStringFormat}
               </p>
             </li>
           </ul>
