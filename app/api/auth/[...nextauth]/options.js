@@ -27,7 +27,11 @@ export const options = {
           type: "text",
           placeholder: "Hakim677",
         },
-        password: { label: "Password", type: "password", placeholder:"xxxxxxxxxx" },
+        password: {
+          label: "Password",
+          type: "password",
+          placeholder: "xxxxxxxxxx",
+        },
       },
       async authorize(credentials) {
         //hard code a user but this is where we will connect out database
@@ -44,14 +48,17 @@ export const options = {
 
         try {
           // Authenticate user against Strapi
-          const response = await fetch(`${process.env.STRAPI_PUBLIC_URL}/api/auth/local`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              identifier: credentials.username,
-              password: credentials.password,
-            }),
-          });
+          const response = await fetch(
+            `${process.env.STRAPI_PUBLIC_URL}/api/auth/local`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                identifier: credentials.username,
+                password: credentials.password,
+              }),
+            }
+          );
 
           const data = await response.json();
 
@@ -62,47 +69,75 @@ export const options = {
           }
 
           // Return user object
-          return { id: data.user.id, name: data.user.username, email: data.user.email };
+          return {
+            id: data.user.id,
+            name: data.user.username,
+            email: data.user.email,
+          };
         } catch (error) {
           console.error("Authorize callback - Fetch error:", error);
           return null;
         }
-
       },
     }),
   ],
   session: {
-    jwt: true,
+    strategy: "jwt",
   },
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async session({ session, token }) {
-      console.log("Session callback - token:", token);
-      if (token?.jwt) {
-        session.jwt = token.jwt;
-        session.id = token.id;
-      } else {
-        console.error("Session callback - token does not have jwt");
-      }
-      return session;
-    },
-    async jwt({ token, user, account }) {
-      if (user) {
+    async jwt({ token, trigger, profile, user, session, account }) {
+      if (account && account.provider === "google") {
         try {
-          const response = await fetch(
-            `${process.env.STRAPI_PUBLIC_URL}/auth/${account.provider}/callback?access_token=${account?.accessToken}`
+          const strapiResponse = await fetch(
+            `${process.env.STRAPI_BACKEND_URL}/api/auth/${account.provider}/callback?access_token=${account.access_token}`,
+            { cache: "no-cache" }
           );
-          const data = await response.json();
-          if (data.jwt && data.user.id) {
-            token.jwt = data.jwt;
-            token.id = data.user.id;
-          } else {
-            console.error("JWT callback - Failed to fetch valid data:", data);
+          if(!strapiResponse.ok) {
+            const strapiError = await strapiResponse.json();
+            throw new Error(strapiError.error.message);
           }
+          const data = await strapiResponse.json();
+          console.log("JWT callback - data:", data);
         } catch (error) {
-          console.error("JWT callback - Fetch error:", error);
+          throw error;
         }
       }
       return token;
     },
+    async session({ token, session }) {
+      return session;
+    },
   },
+  // callbacks: {
+  //   async session({ session, token }) {
+  //     console.log("Session callback - token:", token);
+  //     if (token?.jwt) {
+  //       session.jwt = token.jwt;
+  //       session.id = token.id;
+  //     } else {
+  //       console.error("Session callback - token does not have jwt");
+  //     }
+  //     return session;
+  //   },
+  //   async jwt({ token, user, account }) {
+  //     if (user) {
+  //       try {
+  //         const response = await fetch(
+  //           `${process.env.STRAPI_PUBLIC_URL}/auth/${account.provider}/callback?access_token=${account?.accessToken}`
+  //         );
+  //         const data = await response.json();
+  //         if (data.jwt && data.user.id) {
+  //           token.jwt = data.jwt;
+  //           token.id = data.user.id;
+  //         } else {
+  //           console.error("JWT callback - Failed to fetch valid data:", data);
+  //         }
+  //       } catch (error) {
+  //         console.error("JWT callback - Fetch error:", error);
+  //       }
+  //     }
+  //     return token;
+  //   },
+  // },
 };
