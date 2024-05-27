@@ -4,10 +4,6 @@ import GoogleProvider from "next-auth/providers/google";
 
 export const options = {
   providers: [
-    // GitHubProvider({
-    //   clientId: process.env.GITHUB_ID,
-    //   clientSecret: process.env.GITHUB_SECRET,
-    // }),
     GoogleProvider({
       clientId: process.env.GOOGLE_ID,
       clientSecret: process.env.GOOGLE_SECRET,
@@ -22,26 +18,16 @@ export const options = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        username: {
-          label: "Username:",
+        identifier: {
+          label: "Email or username",
           type: "text",
-          placeholder: "Hakim677",
         },
         password: {
           label: "Password",
           type: "password",
-          placeholder: "xxxxxxxxxx",
         },
       },
       async authorize(credentials) {
-        //hard code a user but this is where we will connect out database
-        // const user = { id: "1", name: "hakim", email: "jsmith@example.com", password:"Hakim,12" };
-        // if(credentials?.username === user.name && credentials?.password === user.password ){
-        //     return user;
-        // }
-        // else{
-        //     return null
-        // }
         if (!credentials) {
           return null;
         }
@@ -49,12 +35,12 @@ export const options = {
         try {
           // Authenticate user against Strapi
           const response = await fetch(
-            `${process.env.STRAPI_PUBLIC_URL}/api/auth/local`,
+            `${process.env.STRAPI_BACKEND_URL}/api/auth/local`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                identifier: credentials.username,
+                identifier: credentials.identifier,
                 password: credentials.password,
               }),
             }
@@ -62,7 +48,6 @@ export const options = {
 
           const data = await response.json();
 
-          // Check for errors in the response
           if (data.error || !data.user) {
             console.error("Authorize callback - Invalid credentials:", data);
             return null;
@@ -70,9 +55,12 @@ export const options = {
 
           // Return user object
           return {
-            id: data.user.id,
             name: data.user.username,
             email: data.user.email,
+            strapiUserId: data.user.id,
+            id: data.user.id.toString(),
+            blocked: data.user.blocked,
+            strapiToken: data.jwt,
           };
         } catch (error) {
           console.error("Authorize callback - Fetch error:", error);
@@ -90,7 +78,7 @@ export const options = {
     //Note: jwt callback runs before session callback
     //once google authentiate us in the frontend, we pass both the account and token to our jwt callback to contact our strapi backend to either register the user if not present or authenticate the user if present and send us a jwt
 
-    async jwt({ token, account }) {
+    async jwt({ token, account, user, session }) {
       if (account && account.provider === "google") {
         try {
           const strapiResponse = await fetch(
@@ -117,9 +105,10 @@ export const options = {
               updatedAt: '2024-05-22T15:53:09.923Z'
             }
           */
-         //we can now use this data to populate the token object
-          token.strapi_user_id = data.user.id;
-          token.strapi_user_account_status = data.user.blocked;
+          //we can now use this data to populate the token object
+          token.strapiUserId = data.user.id;
+          token.provider = account.provider;
+          token.blocked = data.user.blocked;
           token.strapiToken = data.jwt;
 
           //you can then decide to log the data from strapi
@@ -128,13 +117,22 @@ export const options = {
           throw error;
         }
       }
+      if (account && account.provider === "credentials") {
+        // for credentials, not google provider
+        // name and email are taken care of by next-auth or authorize
+        token.strapiToken = user.strapiToken;
+        token.strapiUserId = user.strapiUserId;
+        token.provider = account.provider;
+        token.blocked = user.blocked;
+      }
       return token;
     },
 
     async session({ token, session }) {
       session.strapiToken = token.strapiToken;
-      session.strapi_user_id = token.strapi_user_id;
-      session.strapi_user_account_status = token.strapi_user_account_status;
+      session.provider = token.provider;
+      session.user.strapiUserId = token.strapiUserId;
+      session.user.blocked = token.blocked;
       return session;
     },
   },
