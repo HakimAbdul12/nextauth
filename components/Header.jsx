@@ -13,17 +13,11 @@ export default async function Header() {
         <div>
           <ul className="flex justify-between gap-4 text-xl">
             <li>
-              <Link href={"/"}>Home</Link>
-            </li>
-            <li>
               <Link href={"/client"}>Client</Link>
-            </li>
-            <li>
-              <Link href={"/aboutus"}>About</Link>
             </li>
             {session && (
               <li>
-                <Link href={"/dashboard"}>Dashboard</Link>
+                <Link href={"/server"}>Server</Link>
               </li>
             )}
             <li className="text-[#ff55008f]">
@@ -35,7 +29,7 @@ export default async function Header() {
           {session ? (
             <img
               className="w-10 h-10 rounded-full mr-2"
-              src={session.user?.image}
+              src={session?.user.image}
               alt="Profile"
             />
           ) : (
